@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      background: var(--figma-color-bg);
+      color: var(--figma-color-text);
+    }
+    .chip {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+    }
+    .label { font-size: 12px; }
+    .icon {
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--figma-color-border);
+      border-radius: 7px;
+      user-select: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="chip">
+    <div class="label">Detach 0</div>
+    <div class="icon" title="Setup">⚙</div>
+  </div>
+</body>
+</html>
