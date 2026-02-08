@@ -1,36 +1,769 @@
 <!doctype html>
-<html>
+<html data-theme="light">
 <head>
-  <meta charset="utf-8" />
-  <style>
-    html, body {
-      margin: 0; padding: 0;
-      font-family: Inter, system-ui, -apple-system, sans-serif;
-      background: var(--figma-color-bg);
-      color: var(--figma-color-text);
-    }
-    .chip {
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-    }
-    .label { font-size: 12px; }
-    .icon {
-      width: 22px; height: 22px;
-      display: flex; align-items: center; justify-content: center;
-      border: 1px solid var(--figma-color-border);
-      border-radius: 7px;
-      user-select: none;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="utf-8" />
+<style>
+/* ── Theme tokens ──────────────────────────── */
+[data-theme="light"] {
+  --bg:     #fff;
+  --panel:  #f5f5f5;
+  --text:   #1e1e1e;
+  --muted:  #888;
+  --border: #ddd;
+  --shadow: rgba(0,0,0,.08);
+  --accent: #0d99ff;
+  --accent-text: #fff;
+  --danger: #e03e3e;
+  --tab-bg: #eee;
+  --tab-active-bg: #fff;
+  --input-bg: #fff;
+  --toast-bg: #1e1e1e;
+  --toast-text: #fff;
+}
+[data-theme="dark"] {
+  --bg:     #2c2c2c;
+  --panel:  #383838;
+  --text:   #e0e0e0;
+  --muted:  #888;
+  --border: #444;
+  --shadow: rgba(0,0,0,.3);
+  --accent: #0d99ff;
+  --accent-text: #fff;
+  --danger: #ff6b6b;
+  --tab-bg: #383838;
+  --tab-active-bg: #2c2c2c;
+  --input-bg: #333;
+  --toast-bg: #e0e0e0;
+  --toast-text: #1e1e1e;
+}
+
+/* ── Figma CSS var overrides (primary source) ── */
+html, body {
+  margin: 0; padding: 0;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  background: var(--figma-color-bg, var(--bg));
+  color: var(--figma-color-text, var(--text));
+  overflow: hidden;
+  height: 100%;
+}
+html { height: 100%; }
+body { height: 100%; display: flex; flex-direction: column; }
+
+/* ── Shared ────────────────────────────────── */
+* { box-sizing: border-box; }
+
+button {
+  font-family: inherit; font-size: 12px;
+  cursor: pointer; border: none; border-radius: 6px;
+  padding: 6px 14px;
+  background: var(--figma-color-bg-secondary, var(--panel));
+  color: var(--figma-color-text, var(--text));
+  border: 1px solid var(--figma-color-border, var(--border));
+}
+button:hover { opacity: .85; }
+button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+input, textarea {
+  font-family: inherit; font-size: 12px;
+  background: var(--figma-color-bg, var(--input-bg));
+  color: var(--figma-color-text, var(--text));
+  border: 1px solid var(--figma-color-border, var(--border));
+  border-radius: 6px;
+  padding: 6px 8px;
+  outline: none;
+  width: 100%;
+}
+input:focus, textarea:focus {
+  border-color: var(--accent);
+}
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 200px;
+}
+
+.close-btn {
+  background: none; border: none; padding: 4px;
+  color: var(--figma-color-text, var(--muted));
+  font-size: 16px; cursor: pointer; line-height: 1;
+}
+.close-btn:hover { opacity: .6; }
+
+/* ── Screen container ──────────────────────── */
+.screen { display: none; flex: 1; min-height: 0; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ── 0. User type selection modal ──────────── */
+#screen-user-type {
+  padding: 6px 12px 8px 12px;
+  gap: 0;
+}
+#screen-user-type .subtitle {
+  margin: 8px 0 12px 0; text-align: center; font-size: 12px; font-weight: 500;
+  color: var(--figma-color-text-secondary, var(--muted));
+}
+#screen-user-type .cards {
+  display: flex; gap: 10px;
+}
+.type-card {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
+  padding: 10px 10px;
+  border: 1px solid var(--figma-color-border, var(--border));
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--figma-color-bg, var(--bg));
+  transition: border-color .15s, box-shadow .15s;
+  text-align: center;
+}
+.type-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.type-card .card-icon {
+  font-size: 24px; line-height: 1;
+  color: var(--figma-color-text, var(--text));
+  display: flex; align-items: center; justify-content: center;
+}
+.type-card .card-headline {
+  font-size: 13px; font-weight: 600;
+  color: var(--figma-color-text, var(--text));
+}
+.type-card .card-helper {
+  font-size: 10px; line-height: 1.3;
+  color: var(--figma-color-text-secondary, var(--muted));
+}
+
+/* ── 1. Chip ───────────────────────────────── */
+#screen-chip {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  height: 32px;
+}
+#screen-chip .label { font-size: 12px; font-weight: 500; }
+#screen-chip .gear {
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--figma-color-border, var(--border));
+  border-radius: 7px;
+  cursor: pointer; user-select: none; font-size: 13px;
+}
+#screen-chip .gear:hover { opacity: .7; }
+
+/* ── 2. Admin allowlist ────────────────────── */
+#screen-admin-list {
+  padding: 16px;
+  gap: 10px;
+}
+#screen-admin-list .header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+#screen-admin-list .header h2 { margin: 0; font-size: 14px; font-weight: 600; }
+#screen-admin-list .add-row {
+  display: flex; gap: 6px;
+}
+#screen-admin-list .email-list {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 4px;
+}
+#screen-admin-list .email-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--figma-color-bg-secondary, var(--panel));
+  font-size: 12px;
+}
+#screen-admin-list .email-item .remove-btn {
+  background: none; border: none; padding: 2px 4px;
+  color: var(--danger); cursor: pointer; font-size: 14px;
+  line-height: 1;
+}
+#screen-admin-list .email-item .remove-btn:hover { opacity: .7; }
+#screen-admin-list .actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* ── 3. Admin authoring ────────────────────── */
+#screen-authoring {
+  height: 100%;
+}
+
+.authoring-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px 0 14px;
+}
+.authoring-header h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.authoring-header .header-right { display: flex; align-items: center; gap: 8px; }
+.authoring-header .avatar-btn {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--figma-color-border, var(--border));
+  border-radius: 6px;
+  cursor: pointer; font-size: 13px; background: none;
+  color: var(--figma-color-text, var(--text));
+  padding: 0;
+}
+.authoring-header .avatar-btn:hover { opacity: .7; }
+
+.tabs {
+  display: flex; gap: 0; padding: 8px 14px 0 14px;
+  border-bottom: 1px solid var(--figma-color-border, var(--border));
+}
+.tab {
+  padding: 6px 12px; cursor: pointer;
+  font-size: 11px; font-weight: 500;
+  color: var(--figma-color-text-secondary, var(--muted));
+  border-bottom: 2px solid transparent;
+  position: relative; user-select: none;
+  background: none; border-radius: 0; border-left: none; border-right: none; border-top: none;
+}
+.tab:hover { color: var(--figma-color-text, var(--text)); }
+.tab.active {
+  color: var(--figma-color-text, var(--text));
+  border-bottom-color: var(--accent);
+}
+.tab .dirty-dot {
+  display: none;
+  width: 5px; height: 5px;
+  background: var(--accent);
+  border-radius: 50%;
+  position: absolute; top: 4px; right: 4px;
+}
+.tab.dirty .dirty-dot { display: block; }
+
+.authoring-body {
+  display: flex; flex: 1; min-height: 0; overflow: hidden;
+}
+
+/* editor pane */
+.editor-pane {
+  flex: 1; padding: 14px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px;
+  border-right: 1px solid var(--figma-color-border, var(--border));
+}
+.editor-pane .field { display: flex; flex-direction: column; gap: 3px; }
+.editor-pane .field label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--figma-color-text-secondary, var(--muted));
+}
+.editor-pane .cta-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.editor-pane .cta-row .field { flex: 1 1 120px; min-width: 0; }
+.editor-pane .save-row {
+  display: flex; align-items: center; gap: 10px; margin-top: 4px;
+}
+.editor-pane .saved-msg {
+  font-size: 11px; color: var(--accent); opacity: 0;
+  transition: opacity .3s;
+}
+.editor-pane .saved-msg.show { opacity: 1; }
+
+/* preview pane */
+.preview-pane {
+  flex: 0 0 42%; min-width: 160px; max-width: 240px;
+  padding: 14px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.preview-pane .preview-label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--figma-color-text-secondary, var(--muted));
+}
+.preview-card {
+  border: 1px solid var(--figma-color-border, var(--border));
+  border-radius: 8px; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--figma-color-bg, var(--bg));
+}
+.preview-card .pv-badge {
+  font-size: 10px; font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.preview-card .pv-headline {
+  font-size: 13px; font-weight: 600;
+  color: var(--figma-color-text, var(--text));
+  min-height: 16px;
+}
+.preview-card .pv-body {
+  font-size: 11px; line-height: 1.4;
+  color: var(--figma-color-text-secondary, var(--muted));
+  min-height: 20px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.preview-card .pv-ctas {
+  display: flex; gap: 6px; margin-top: 4px;
+}
+.preview-card .pv-ctas button {
+  font-size: 11px; padding: 4px 10px;
+}
+
+/* ── Toast ─────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+  background: var(--toast-bg); color: var(--toast-text);
+  padding: 6px 14px; border-radius: 6px; font-size: 11px;
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+  z-index: 100;
+}
+.toast.show { opacity: 1; }
+</style>
 </head>
 <body>
-  <div class="chip">
-    <div class="label">Detach 0</div>
-    <div class="icon" title="Setup">⚙</div>
+
+<!-- ════════ SCREEN: User type selection ════════ -->
+<div id="screen-user-type" class="screen active">
+  <p class="subtitle">Choose your mode</p>
+  <div class="cards">
+    <div class="type-card" id="card-user">
+      <span class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></span>
+      <span class="card-headline">User</span>
+      <span class="card-helper">See guidance when drift happens.</span>
+    </div>
+    <div class="type-card" id="card-admin">
+      <span class="card-icon">⚙</span>
+      <span class="card-headline">Admin</span>
+      <span class="card-helper">Edit the guidance shown to your team.</span>
+    </div>
   </div>
+</div>
+
+<!-- ════════ SCREEN: Chip ════════ -->
+<div id="screen-chip" class="screen">
+  <div class="label">Detach <span id="detach-count">0</span></div>
+  <div class="gear" id="btn-gear" title="Admin access">⚙</div>
+</div>
+
+<!-- ════════ SCREEN: Admin Allowlist ════════ -->
+<div id="screen-admin-list" class="screen">
+  <div class="header">
+    <h2>Admin allow list</h2>
+    <button class="close-btn" id="btn-al-close">✕</button>
+  </div>
+  <div class="add-row">
+    <button id="btn-al-add">+ Add me</button>
+  </div>
+  <div class="email-list" id="al-list"></div>
+  <div class="actions">
+    <button class="primary" id="btn-al-continue">Continue</button>
+  </div>
+</div>
+
+<!-- ════════ SCREEN: Authoring ════════ -->
+<div id="screen-authoring" class="screen">
+  <div class="authoring-header">
+    <h2>Coach</h2>
+    <div class="header-right">
+      <button class="avatar-btn" id="btn-admin-list" title="Admin list">👤</button>
+      <button class="close-btn" data-goto="chip">✕</button>
+    </div>
+  </div>
+  <div class="tabs" id="tab-bar">
+    <button class="tab active" data-cat="component">Component<span class="dirty-dot"></span></button>
+    <button class="tab" data-cat="text">Text<span class="dirty-dot"></span></button>
+    <button class="tab" data-cat="color">Color<span class="dirty-dot"></span></button>
+    <button class="tab" data-cat="typography">Typography<span class="dirty-dot"></span></button>
+  </div>
+  <div class="authoring-body">
+    <div class="editor-pane">
+      <div class="field">
+        <label>Headline</label>
+        <input type="text" id="ed-headline" placeholder="e.g. Component detached" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="ed-description" placeholder="Explain what happened and what to do instead…"></textarea>
+      </div>
+      <div class="cta-row">
+        <div class="field">
+          <label>CTA 1 label</label>
+          <input type="text" id="ed-cta1" placeholder="e.g. Undo" />
+        </div>
+        <div class="field">
+          <label>CTA 2 label</label>
+          <input type="text" id="ed-cta2" placeholder="e.g. Open docs" />
+        </div>
+      </div>
+      <div class="save-row">
+        <button class="primary" id="btn-save">Save</button>
+        <span class="saved-msg" id="saved-msg">Saved ✓</span>
+      </div>
+    </div>
+    <div class="preview-pane">
+      <div class="preview-label">Preview</div>
+      <div class="preview-card">
+        <div class="pv-badge" id="pv-badge">Component</div>
+        <div class="pv-headline" id="pv-headline"></div>
+        <div class="pv-body" id="pv-body"></div>
+        <div class="pv-ctas">
+          <button class="primary" id="pv-cta1"></button>
+          <button id="pv-cta2"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─────────────────────────────────────────────
+   Coach · UI logic — state machine
+   ───────────────────────────────────────────── */
+
+/* ── View states ─────────────────────────────── */
+const VIEW = {
+  USER_TYPE_MODAL:  'user-type',
+  TINY_CHIP:        'chip',
+  ADMIN_ALLOWLIST:  'admin-list',
+  ADMIN_AUTHORING:  'authoring',
+};
+
+/* ── Sizes ───────────────────────────────────── */
+const CHIP_W = 170, CHIP_H = 32;
+const TYPE_MODAL_W = 300, TYPE_MODAL_H = 148;
+const AUTH_MIN_W = 460, AUTH_MIN_H = 420;
+const LIST_W = 320, LIST_MIN_H = 200, LIST_MAX_H = 420;
+
+const CATEGORIES = ['component', 'text', 'color', 'typography'];
+const CAT_LABELS = { component: 'Component', text: 'Text', color: 'Color', typography: 'Typography' };
+
+/* ── State ───────────────────────────────────── */
+let currentView = VIEW.USER_TYPE_MODAL;
+let allowlist = [];
+let content = null;
+let currentCat = 'component';
+let savedSnapshot = null;
+let adminName = '';       // name that passed the gate (from Figma currentUser)
+let userName = '';        // current Figma user's display name, sent by code.js
+let userId = '';          // current Figma user's ID, sent by code.js
+let allowlistReturnTo = VIEW.TINY_CHIP; // where to go back from allowlist screen
+
+function defaultContent() {
+  const out = {};
+  CATEGORIES.forEach(c => {
+    out[c] = { headline: '', description: '', cta1: '', cta2: '' };
+  });
+  return out;
+}
+
+/* ── Theme ───────────────────────────────────── */
+function detectThemeFromFigmaVars() {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--figma-color-bg').trim();
+  if (!bg) return 'light';
+  const m = bg.match(/\d+/g);
+  if (m && m.length >= 3) {
+    const lum = (0.299 * +m[0] + 0.587 * +m[1] + 0.114 * +m[2]) / 255;
+    return lum < 0.5 ? 'dark' : 'light';
+  }
+  return 'light';
+}
+
+function applyTheme() {
+  document.documentElement.dataset.theme = detectThemeFromFigmaVars();
+}
+applyTheme();
+setInterval(applyTheme, 2000);
+
+/* ── Figma comms ─────────────────────────────── */
+window.onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (!msg) return;
+  handleMessage(msg);
+};
+
+function post(msg) {
+  parent.postMessage({ pluginMessage: msg }, '*');
+}
+
+function resize(w, h) {
+  post({ type: 'resize', width: w, height: h });
+}
+
+/* ── Screen navigation (state machine) ───────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const screen = document.getElementById('screen-' + id);
+  screen.classList.add('active');
+  currentView = id;
+
+  switch (id) {
+    case VIEW.USER_TYPE_MODAL:
+      resize(TYPE_MODAL_W, TYPE_MODAL_H);
+      break;
+
+    case VIEW.TINY_CHIP:
+      resize(CHIP_W, CHIP_H);
+      break;
+
+    case VIEW.ADMIN_ALLOWLIST:
+      renderAllowlist();
+      // Update button label based on context
+      document.getElementById('btn-al-continue').textContent =
+        allowlistReturnTo === VIEW.ADMIN_AUTHORING ? 'Done' : 'Continue';
+      requestAnimationFrame(() => {
+        const h = Math.max(LIST_MIN_H, Math.min(screen.scrollHeight + 2, LIST_MAX_H));
+        resize(LIST_W, h);
+      });
+      break;
+
+    case VIEW.ADMIN_AUTHORING:
+      loadTabContent();
+      updatePreview();
+      updateDirtyDots();
+      resize(AUTH_MIN_W, AUTH_MIN_H);
+      break;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 0 : User type selection
+   ═══════════════════════════════════════════════ */
+
+document.getElementById('card-user').onclick = () => {
+  post({ type: 'select-mode', mode: 'user' });
+};
+
+document.getElementById('card-admin').onclick = () => {
+  post({ type: 'select-mode', mode: 'admin' });
+};
+
+/* ═══════════════════════════════════════════════
+   SCREEN 1 : Tiny chip
+   ═══════════════════════════════════════════════ */
+
+document.getElementById('btn-gear').onclick = () => {
+  // Re-open user type selection
+  showScreen(VIEW.USER_TYPE_MODAL);
+};
+
+/* ═══════════════════════════════════════════════
+   SCREEN 2 : Admin allowlist
+   ═══════════════════════════════════════════════ */
+
+document.getElementById('btn-al-close').onclick = () => {
+  showScreen(allowlistReturnTo);
+};
+
+document.getElementById('btn-al-continue').onclick = () => {
+  // Must have at least one admin before continuing
+  if (allowlist.length === 0) return;
+  // Set admin name (bootstrap: current user; management: already set)
+  if (!adminName) adminName = userName || (allowlist[0] && allowlist[0].name) || '';
+  showScreen(VIEW.ADMIN_AUTHORING);
+};
+
+document.getElementById('btn-al-add').onclick = () => {
+  // "Add me" — adds the current Figma user by ID
+  if (!userId) return;
+  // Duplicate check by ID
+  if (!allowlist.some(entry => entry.id === userId)) {
+    allowlist.push({ id: userId, name: userName });
+    post({ type: 'save-allowlist', data: allowlist });
+  }
+  renderAllowlist();
+};
+
+function renderAllowlist() {
+  const list = document.getElementById('al-list');
+  list.innerHTML = '';
+  allowlist.forEach((entry, i) => {
+    const displayName = (typeof entry === 'string') ? entry : (entry.name || entry.id || 'Unknown');
+    const item = document.createElement('div');
+    item.className = 'email-item';
+    const span = document.createElement('span');
+    span.textContent = displayName;
+    item.appendChild(span);
+    const btn = document.createElement('button');
+    btn.className = 'remove-btn';
+    btn.dataset.index = i;
+    btn.title = 'Remove';
+    btn.textContent = 'ⓧ';
+    item.appendChild(btn);
+    list.appendChild(item);
+  });
+  list.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.onclick = () => {
+      const idx = +btn.dataset.index;
+      allowlist.splice(idx, 1);
+      post({ type: 'save-allowlist', data: allowlist });
+      renderAllowlist();
+    };
+  });
+  // re-measure
+  requestAnimationFrame(() => {
+    const screen = document.getElementById('screen-admin-list');
+    if (screen.classList.contains('active')) {
+      const h = Math.max(LIST_MIN_H, Math.min(screen.scrollHeight + 2, LIST_MAX_H));
+      resize(LIST_W, h);
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 3 : Admin authoring
+   ═══════════════════════════════════════════════ */
+
+// ── 👤 → Admin list (from authoring) ────────
+document.getElementById('btn-admin-list').onclick = () => {
+  readEditorIntoContent();
+  allowlistReturnTo = VIEW.ADMIN_AUTHORING; // back returns to authoring
+  showScreen(VIEW.ADMIN_ALLOWLIST);
+};
+
+// ── ✕ → chip (from authoring) ───────────────
+document.querySelectorAll('[data-goto]').forEach(btn => {
+  btn.onclick = () => {
+    const target = btn.dataset.goto;
+    if (target === 'chip') showScreen(VIEW.TINY_CHIP);
+  };
+});
+
+// ── Tabs ────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    readEditorIntoContent(); // save current tab edits in memory
+    currentCat = tab.dataset.cat;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    loadTabContent();
+    updatePreview();
+  };
+});
+
+function loadTabContent() {
+  if (!content) content = defaultContent();
+  const cat = content[currentCat] || { headline: '', description: '', cta1: '', cta2: '' };
+  document.getElementById('ed-headline').value = cat.headline || '';
+  document.getElementById('ed-description').value = cat.description || '';
+  document.getElementById('ed-cta1').value = cat.cta1 || '';
+  document.getElementById('ed-cta2').value = cat.cta2 || '';
+}
+
+function readEditorIntoContent() {
+  if (!content) content = defaultContent();
+  content[currentCat] = {
+    headline: document.getElementById('ed-headline').value,
+    description: document.getElementById('ed-description').value,
+    cta1: document.getElementById('ed-cta1').value,
+    cta2: document.getElementById('ed-cta2').value,
+  };
+}
+
+// ── Live preview ────────────────────────────
+function updatePreview() {
+  if (!content) content = defaultContent();
+  const cat = content[currentCat] || {};
+  document.getElementById('pv-badge').textContent = CAT_LABELS[currentCat] + ' drift';
+  document.getElementById('pv-headline').textContent = cat.headline || '';
+  document.getElementById('pv-body').textContent = cat.description || '';
+  document.getElementById('pv-cta1').textContent = cat.cta1 || 'CTA 1';
+  document.getElementById('pv-cta2').textContent = cat.cta2 || 'CTA 2';
+}
+
+['ed-headline', 'ed-description', 'ed-cta1', 'ed-cta2'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    readEditorIntoContent();
+    updatePreview();
+    updateDirtyDots();
+  });
+});
+
+// ── Dirty dots ──────────────────────────────
+function updateDirtyDots() {
+  if (!savedSnapshot) savedSnapshot = JSON.stringify(defaultContent());
+  const snap = JSON.parse(savedSnapshot);
+  document.querySelectorAll('.tab').forEach(tab => {
+    const cat = tab.dataset.cat;
+    const current = content ? content[cat] : defaultContent()[cat];
+    const saved = snap[cat] || defaultContent()[cat];
+    const dirty = JSON.stringify(current) !== JSON.stringify(saved);
+    tab.classList.toggle('dirty', dirty);
+  });
+}
+
+// ── Save ────────────────────────────────────
+document.getElementById('btn-save').onclick = () => {
+  readEditorIntoContent();
+  post({ type: 'save-content', data: content });
+};
+
+function showSavedMsg() {
+  const el = document.getElementById('saved-msg');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+/* ═══════════════════════════════════════════════
+   Messages from code.js
+   ═══════════════════════════════════════════════ */
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'theme':
+      if (msg.theme) document.documentElement.dataset.theme = msg.theme;
+      break;
+
+    case 'user-identity':
+      userName = msg.name || '';
+      userId = msg.id || '';
+      break;
+
+    case 'route':
+      if (msg.allowlist) allowlist = msg.allowlist;
+      switch (msg.screen) {
+        case 'TINY':
+          showScreen(VIEW.TINY_CHIP);
+          break;
+        case 'ALLOWLIST':
+          if (msg.reason === 'bootstrap') allowlistReturnTo = VIEW.TINY_CHIP;
+          showScreen(VIEW.ADMIN_ALLOWLIST);
+          break;
+        case 'AUTHORING':
+          adminName = userName;
+          showScreen(VIEW.ADMIN_AUTHORING);
+          break;
+      }
+      break;
+
+    case 'allowlist':
+      allowlist = (msg.data || []).map(e => typeof e === 'string' ? { id: null, name: e } : e);
+      // If we're on the allowlist screen, refresh
+      if (currentView === VIEW.ADMIN_ALLOWLIST) renderAllowlist();
+      break;
+
+    case 'content':
+      content = msg.data || defaultContent();
+      savedSnapshot = JSON.stringify(content);
+      if (currentView === VIEW.ADMIN_AUTHORING) {
+        loadTabContent();
+        updatePreview();
+        updateDirtyDots();
+      }
+      break;
+
+    case 'save-ok':
+      savedSnapshot = JSON.stringify(content);
+      updateDirtyDots();
+      showSavedMsg();
+      break;
+  }
+}
+
+/* ── Toast helper ────────────────────────────── */
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+</script>
 </body>
 </html>
