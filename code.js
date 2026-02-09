@@ -300,19 +300,18 @@ function handleNodeChanges(event) {
     var changeNodeId = node.id;
 
     // ── Text style detach ──
-    if (change.type === 'PROPERTY_CHANGE' && change.properties.indexOf('textStyleId') >= 0) {
-      if (trackedTextStyles[changeNodeId]) {
-        if (node.type === 'TEXT') {
-          if (node.textStyleId === '' || node.textStyleId === figma.mixed) {
-            delete trackedTextStyles[changeNodeId];
-            if (!firedCategories.text) {
-              firedCategories.text = true;
-              emitDrift('text');
-            }
-          } else {
-            trackedTextStyles[changeNodeId] = node.textStyleId;
-          }
+    // Some Figma change events do not include `textStyleId` in `change.properties`.
+    // If the node is one we are tracking, always re-check its current textStyleId.
+    if (node.type === 'TEXT' && trackedTextStyles[changeNodeId]) {
+      if (node.textStyleId === '' || node.textStyleId === figma.mixed) {
+        delete trackedTextStyles[changeNodeId];
+        if (!firedCategories.text) {
+          firedCategories.text = true;
+          emitDrift('text');
         }
+      } else {
+        // Style changed to another valid style — keep tracking the new id
+        trackedTextStyles[changeNodeId] = node.textStyleId;
       }
     }
 
