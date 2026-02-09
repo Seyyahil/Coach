@@ -1,76 +1,61 @@
-# Coach — UX
+# Coach — UX (v1)
 
-Coach is a Figma plugin that lives as a tiny chip while the designer works and surfaces a drift modal whenever a design-system violation occurs (component detach, style removal, variable unbinding). Admins author guidance messages for 4 drift categories (Component, Text, Color, Typography) directly inside the DS library file; every other designer sees those messages at the moment of drift.
+Coach is a tiny chip that runs while the user works. It shows a Component Drift modal when a component instance is detached. Guidance is global per category (Component/Text/Color/Typography), with built-in defaults and file-level overrides. Indexing is file-level and optional.
 
 ## Screens
 
 - Tiny chip (runtime)
+- Guidance editor (tabs + editor + preview)
+- Index: start (initiate indexing)
+- Index: results (indexed list + Done)
 - Drift modal (runtime)
-- Admin access (email gate)
-- Admin authoring (tabs + editor + preview)
-- Admin list (allowlist)
 
 ## User flow
 
-### 0. Default Runtime (everyone)
+### 0. Default launch (everyone)
 
-- User opens Coach plugin manually (no auto-start in Design Mode).
-- UI shows tiny chip: **Detach N** + **⚙**.
-- Plugin listens for drift events:
-  - **v1:** component detach only.
-  - **v2:** text style removed/changed, variable binding removed/changed (color/typography).
-- On drift → show Coach modal for the matching category:
-  - Headline + description excerpt.
-  - 2 CTAs (labels are authorable by admins).
-  - Close **[✕]**.
-- Detach count increments on every drift event.
+- User opens Coach manually (no auto-start).
+- Coach opens in **Tiny chip** view.
+- Chip shows **Detach N** + **Setup** (gear icon).
+- Setup opens the Guidance editor (everyone can edit).
 
-### 1. First-Time Setup (admins only, in the LIBRARY file)
+### 1. Drift detection (v1)
 
-- Admin opens the DS library source file (the published component library).
-- Admin opens Coach and clicks **⚙**.
-- If allowlist is empty → bootstrap: first admin adds themselves.
-- Setup screen appears:
-  - Admin allowlist editor (add/remove admin emails).
-  - **Continue** button.
-- ⚙ → onboarding → allowlist → Continue → Authoring.
+- User selects a component instance and detaches it.
+- Coach detects the detach.
+- Coach increments **Detach** count.
+- Coach shows the **Drift modal** using:
+  1. File override content (if saved), else
+  2. Built-in defaults
 
-### 2. Admin Authoring (admins only, in library file)
+### 2. Modal actions
 
-- Admin authoring screen has **4 tabs**: Component / Text / Color / Typography.
-- 👤 opens Admin list.
-- Each tab edits:
-  - Headline (single line).
-  - Description (rich text).
-  - CTA 1 label (text).
-  - CTA 2 label (text).
-- Right column shows **live Preview** of the runtime modal.
-- Save is explicit — one Save saves all 4 categories at once.
-- Show **"Saved"** confirmation.
-- Dirty indicator per tab (dot) when unsaved changes exist.
+- CTA 1 / CTA 2 / ✕ all close the modal → Tiny chip.
+- Detach count remains persisted.
 
-### 3. Shared Content Location (library as source of truth)
+### 3. Guidance (category-based)
 
-- Authored category content is stored in the library file.
-- Designers in other files see the same content without entering email or doing setup.
+- From Tiny chip, click the Setup/gear icon → opens **Guidance editor**.
+- 4 category tabs: **Component / Text / Color / Typography**.
+- Each tab edits: Headline, Description (rich text), CTA 1 label, CTA 2 label.
+- Right column: **Live Preview** of how the drift modal will look.
+- Save is explicit.
+- Saved content becomes the file-level override used by drift modals in that file.
 
-### 4. Runtime Consumption (everyone, in ANY file using the library)
+### 4. Indexing (file-level)
 
-- Designers work in their own design files (not the library).
-- They open Coach (tiny chip stays running).
-- On drift → Coach shows the modal using shared category content authored in the library.
-- Non-admins never see setup/admin UI.
+- From Guidance editor, click **Index** (top-level tab) → shows **Index: start**.
+- Click **Index components** → run scan.
 
-### 5. Permissions Rules
+### 5. Index results
 
-- Admin status = current user email is in allowlist.
-- Admins can open Setup / Admin screens.
-- Non-admins: **⚙** is hidden or no-op; only tiny chip + runtime modal.
+- Shows list of discovered components / component sets.
+- Click **Done** → return to Tiny chip.
 
-### 6. Fallback Behavior
+### 6. Index behavior
 
-- If shared library content can't be found/read:
-  - Coach shows built-in default message for that category (still functional).
+- Indexing only stores the set of component identifiers for this file (for recognition).
+- Guidance remains global per category, not per component.
 
 ## Wireframes
 
@@ -82,17 +67,32 @@ Coach is a Figma plugin that lives as a tiny chip while the designer works and s
 └──────────────────────────────┘
 ```
 
-### B) Admin access
+### B) Guidance editor
 
 ```
-┌────────────────────────────┐
-│ Admin access          [ ✕ ]│
-│                            │
-│ Email                      │
-│ [ you@company.com       ]  │
-│                            │
-│              [ Continue ]  │
-└────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Coach                                                                 [ ✕ ]  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ [ Guidance ]   [ Index ]                                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ [ Component ] [ Text ] [ Color ] [ Typography ]                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ┌──────────────────────────────────────────────┐  ┌─────────────────────────┐ │
+│ │ HEADLINE                                     │  │ PREVIEW                  │ │
+│ │ [ _______________________________________ ]  │  │ ┌─────────────────────┐ │ │
+│ │                                              │  │ │ COMPONENT DRIFT      │ │ │
+│ │ DESCRIPTION (rich text)                      │  │ │ <headline>           │ │ │
+│ │ [B] [I] [🔗]                                  │  │ │ <body…>              │ │ │
+│ │ ┌──────────────────────────────────────────┐ │  │ │                     │ │ │
+│ │ │                                          │ │  │ │ [ CTA 1 ] [ CTA 2 ]  │ │ │
+│ │ └──────────────────────────────────────────┘ │  │ └─────────────────────┘ │ │
+│ │                                              │  └─────────────────────────┘ │
+│ │ CTA 1 LABEL              CTA 2 LABEL         │                            │
+│ │ [ ____________________ ]  [ ____________________ ]                         │
+│ │                                              │                            │
+│ │ [ Save ]                                      │                            │
+│ └──────────────────────────────────────────────┘                            │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### C) Drift modal
@@ -100,53 +100,61 @@ Coach is a Figma plugin that lives as a tiny chip while the designer works and s
 ```
 ┌──────────────────────────────────────────┐
 │ Coach                               [ ✕ ]│
-│ Component drift detected                 │
+│ COMPONENT DRIFT                          │
 │ <headline>                               │
 │ <description excerpt…>                   │
 │                                          │
-│ [ <Undo label> ]            [ <Docs label> ]│
+│ [ <CTA 1 label> ]          [ <CTA 2 label> ]│
 └──────────────────────────────────────────┘
 ```
 
-### D) Setup allowlist
+### D) Index: start
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ Setup                                                  [ ✕ ]  │
+│ Coach                                                  [ ✕ ]  │
 ├──────────────────────────────────────────────────────────────┤
-│ Admin allow list                                               │
-│ [ add admin email ________________________________ ] [ Add ]   │
-│ • hakan@company.com                                        ⓧ   │
-│ • designops@company.com                                     ⓧ   │
+│ [ Guidance ]   [ Index ]                                     │
+├──────────────────────────────────────────────────────────────┤
+│ Index this file's components                                  │
+│ Coach will scan local components/component sets so it can      │
+│ recognize detaches more reliably.                              │
 │                                                              │
-│ [ Continue ]                                                  │
+│                                   [ Cancel ] [ Index components ]│
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### E) Admin authoring
+### E) Index: results
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ Coach                                                                 [ ✕ ]  │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ [ Component ] [ Text ] [ Color ] [ Typography ]                         👤     │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ ┌──────────────────────────────────────────────┐  ┌─────────────────────────┐ │
-│ │ Headline                                     │  │ Preview                  │ │
-│ │ [ _______________________________________ ]  │  │ ┌─────────────────────┐ │ │
-│ │                                              │  │ │ Coach               │ │ │
-│ │ Description (rich text)                      │  │ │ Component drift     │ │ │
-│ │ ┌──────────────────────────────────────────┐ │  │ │ ------------------- │ │ │
-│ │ │                                          │ │  │ │ <rendered headline> │ │ │
-│ │ │                                          │ │  │ │ <rendered body…>    │ │ │
-│ │ └──────────────────────────────────────────┘ │  │ │                     │ │ │
-│ │ [B] [I] [•] [1.] [🔗]                        │  │ │ [ Undo ] [ Open docs]│ │ │
-│ │                                              │  │ └─────────────────────┘ │ │
-│ │ CTA 1 label               CTA 2 label        │  └─────────────────────────┘ │
-│ │ [ ____________________ ]  [ ____________________ ]                           │
-│ └──────────────────────────────────────────────┘                              │
-└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ Coach                                                  [ ✕ ]  │
+├──────────────────────────────────────────────────────────────┤
+│ [ Guidance ]   [ Index ]                                     │
+├──────────────────────────────────────────────────────────────┤
+│ 128 components found                                          │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ ✓ Button / Primary                                       │ │
+│ │ ✓ Button / Secondary                                     │ │
+│ │ ✓ Card                                                   │ │
+│ │ ✓ Input                                                  │ │
+│ │ …                                                       │ │
+│ └──────────────────────────────────────────────────────────┘ │
+│                                            [ Done ]          │
+└──────────────────────────────────────────────────────────────┘
 ```
+
+## Persistence
+
+All stored as file-level plugin data (same for every user who opens the file):
+
+- `detachCount` — number, persisted
+- `guidanceOverrides` — object keyed by category: component/text/color/typography
+- `indexedComponents` — array of component identifiers captured during indexing
+
+## Guard rule
+
+When the user is in the Guidance editor or Index screens, drift events should increment Detach count silently but not pop the Drift modal.
 
 ## Architecture / sitemap
 
@@ -156,13 +164,13 @@ Runtime path
   Tiny chip  ──▶  Drift modal
   (always on)     (on drift event)
 
-Admin path
+Editing path
 ─────────────
-  ⚙  ──▶  Admin access  ──▶  Authoring
-           (email gate)       (4 tabs)
-  If allowlist empty → bootstrap (auto-add first admin)
-  If email not in allowlist → return to chip (no error)
+  Tiny chip  ──▶  Guidance editor
 
-👤 in Authoring opens Admin list.
-Note: Built-in defaults exist until library config is present.
+Index path
+───────────
+  Guidance editor  ──▶  Index: start  ──▶  Index: results  ──▶  Tiny chip
+
+Note: Built-in defaults exist until a user overrides guidance in this file.
 ```

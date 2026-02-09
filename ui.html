@@ -46,6 +46,7 @@ html, body {
   color: var(--figma-color-text, var(--text));
   overflow: hidden;
   height: 100%;
+  min-height: 0;
 }
 html { height: 100%; }
 body { height: 100%; display: flex; flex-direction: column; }
@@ -84,61 +85,90 @@ input:focus, textarea:focus {
 textarea {
   resize: vertical;
   min-height: 80px;
-  max-height: 200px;
+  max-height: 400px;
 }
 
-.close-btn {
-  background: none; border: none; padding: 4px;
-  color: var(--figma-color-text, var(--muted));
-  font-size: 16px; cursor: pointer; line-height: 1;
+/* ── Rich text editor ─────────────────────── */
+.rt-wrap {
+  border: 1px solid var(--figma-color-border, var(--border));
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color .15s;
 }
-.close-btn:hover { opacity: .6; }
+.rt-wrap:focus-within {
+  border-color: var(--accent);
+}
+.rt-toolbar {
+  display: flex; align-items: center; gap: 1px;
+  padding: 4px 6px;
+  background: var(--figma-color-bg-secondary, var(--panel));
+  border-bottom: 1px solid var(--figma-color-border, var(--border));
+}
+.rt-toolbar .rt-sep {
+  width: 1px; height: 16px; margin: 0 4px;
+  background: var(--figma-color-border, var(--border));
+}
+.rt-btn {
+  width: 26px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0; font-size: 12px;
+  background: none; border: none;
+  border-radius: 4px; cursor: pointer;
+  color: var(--figma-color-text-secondary, var(--muted));
+}
+.rt-btn:hover {
+  background: var(--figma-color-bg, var(--bg));
+  color: var(--figma-color-text, var(--text));
+}
+.rt-btn.active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.rt-editor {
+  font-family: inherit; font-size: 12px;
+  background: var(--figma-color-bg, var(--input-bg));
+  color: var(--figma-color-text, var(--text));
+  border: none;
+  padding: 8px;
+  outline: none;
+  min-height: 80px;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap; word-break: break-word;
+}
+.rt-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--figma-color-text-secondary, var(--muted));
+  pointer-events: none;
+}
+.rt-editor a {
+  color: var(--accent); text-decoration: underline;
+}
+/* Inline link input bar */
+.rt-link-bar {
+  display: none; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  background: var(--figma-color-bg-secondary, var(--panel));
+  border-top: 1px solid var(--figma-color-border, var(--border));
+}
+.rt-link-bar.visible { display: flex; }
+.rt-link-bar input {
+  flex: 1; font-size: 11px; padding: 4px 6px;
+  border-radius: 4px; min-width: 0;
+}
+.rt-link-bar button {
+  font-size: 11px; padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Rich text in preview + drift */
+.pv-body a {
+  color: var(--accent); text-decoration: underline;
+}
 
 /* ── Screen container ──────────────────────── */
 .screen { display: none; flex: 1; min-height: 0; }
 .screen.active { display: flex; flex-direction: column; }
-
-/* ── 0. User type selection modal ──────────── */
-#screen-user-type {
-  padding: 6px 12px 8px 12px;
-  gap: 0;
-}
-#screen-user-type .subtitle {
-  margin: 8px 0 12px 0; text-align: center; font-size: 12px; font-weight: 500;
-  color: var(--figma-color-text-secondary, var(--muted));
-}
-#screen-user-type .cards {
-  display: flex; gap: 10px;
-}
-.type-card {
-  flex: 1;
-  display: flex; flex-direction: column; align-items: center;
-  gap: 6px;
-  padding: 10px 10px;
-  border: 1px solid var(--figma-color-border, var(--border));
-  border-radius: 10px;
-  cursor: pointer;
-  background: var(--figma-color-bg, var(--bg));
-  transition: border-color .15s, box-shadow .15s;
-  text-align: center;
-}
-.type-card:hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-.type-card .card-icon {
-  font-size: 24px; line-height: 1;
-  color: var(--figma-color-text, var(--text));
-  display: flex; align-items: center; justify-content: center;
-}
-.type-card .card-headline {
-  font-size: 13px; font-weight: 600;
-  color: var(--figma-color-text, var(--text));
-}
-.type-card .card-helper {
-  font-size: 10px; line-height: 1.3;
-  color: var(--figma-color-text-secondary, var(--muted));
-}
 
 /* ── 1. Chip ───────────────────────────────── */
 #screen-chip {
@@ -158,84 +188,58 @@ textarea {
 }
 #screen-chip .gear:hover { opacity: .7; }
 
-/* ── 2. Admin allowlist ────────────────────── */
-#screen-admin-list {
-  padding: 16px;
-  gap: 10px;
-}
-#screen-admin-list .header {
-  display: flex; align-items: center; justify-content: space-between;
-}
-#screen-admin-list .header h2 { margin: 0; font-size: 14px; font-weight: 600; }
-#screen-admin-list .add-row {
-  display: flex; gap: 6px;
-}
-#screen-admin-list .email-list {
-  flex: 1; min-height: 0; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 4px;
-}
-#screen-admin-list .email-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--figma-color-bg-secondary, var(--panel));
-  font-size: 12px;
-}
-#screen-admin-list .email-item .remove-btn {
-  background: none; border: none; padding: 2px 4px;
-  color: var(--danger); cursor: pointer; font-size: 14px;
-  line-height: 1;
-}
-#screen-admin-list .email-item .remove-btn:hover { opacity: .7; }
-#screen-admin-list .actions {
-  display: flex; justify-content: flex-end; gap: 8px;
-}
-
-/* ── 3. Admin authoring ────────────────────── */
+/* ── 2. Authoring ─────────────────────────── */
 #screen-authoring {
   height: 100%;
 }
 
-.authoring-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px 0 14px;
-}
-.authoring-header h2 { margin: 0; font-size: 14px; font-weight: 600; }
-.authoring-header .header-right { display: flex; align-items: center; gap: 8px; }
-.authoring-header .avatar-btn {
-  width: 24px; height: 24px;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--figma-color-border, var(--border));
-  border-radius: 6px;
-  cursor: pointer; font-size: 13px; background: none;
-  color: var(--figma-color-text, var(--text));
-  padding: 0;
-}
-.authoring-header .avatar-btn:hover { opacity: .7; }
-
-.tabs {
-  display: flex; gap: 0; padding: 8px 14px 0 14px;
+/* Top-level nav (Guidance / Index) — primary tabs */
+.top-nav {
+  display: flex; gap: 0; padding: 0 14px;
+  background: var(--figma-color-bg-secondary, var(--panel));
   border-bottom: 1px solid var(--figma-color-border, var(--border));
 }
-.tab {
-  padding: 6px 12px; cursor: pointer;
-  font-size: 11px; font-weight: 500;
+.top-tab {
+  padding: 10px 16px 8px; cursor: pointer; font-size: 13px; font-weight: 600;
   color: var(--figma-color-text-secondary, var(--muted));
-  border-bottom: 2px solid transparent;
-  position: relative; user-select: none;
-  background: none; border-radius: 0; border-left: none; border-right: none; border-top: none;
+  border: none; border-bottom: 2px solid transparent;
+  background: none; border-radius: 0;
+  letter-spacing: .01em;
 }
-.tab:hover { color: var(--figma-color-text, var(--text)); }
-.tab.active {
+.top-tab:hover { color: var(--figma-color-text, var(--text)); }
+.top-tab.active {
   color: var(--figma-color-text, var(--text));
   border-bottom-color: var(--accent);
+}
+
+/* Category tabs (Component / Text / Color / Typography) — secondary pills */
+.tabs {
+  display: flex; gap: 6px; padding: 8px 14px;
+}
+.tab {
+  padding: 4px 10px; cursor: pointer;
+  font-size: 11px; font-weight: 500;
+  color: var(--figma-color-text-secondary, var(--muted));
+  border: 1px solid transparent;
+  border-radius: 100px;
+  position: relative; user-select: none;
+  background: none;
+}
+.tab:hover {
+  color: var(--figma-color-text, var(--text));
+  background: var(--figma-color-bg-secondary, var(--panel));
+}
+.tab.active {
+  color: var(--figma-color-text, var(--text));
+  background: var(--figma-color-bg-secondary, var(--panel));
+  border-color: var(--figma-color-border, var(--border));
 }
 .tab .dirty-dot {
   display: none;
   width: 5px; height: 5px;
   background: var(--accent);
   border-radius: 50%;
-  position: absolute; top: 4px; right: 4px;
+  position: absolute; top: 2px; right: 2px;
 }
 .tab.dirty .dirty-dot { display: block; }
 
@@ -267,7 +271,7 @@ textarea {
 
 /* preview pane */
 .preview-pane {
-  flex: 0 0 42%; min-width: 160px; max-width: 240px;
+  flex: 1; min-width: 0;
   padding: 14px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 8px;
 }
@@ -280,11 +284,6 @@ textarea {
   border-radius: 8px; padding: 12px;
   display: flex; flex-direction: column; gap: 8px;
   background: var(--figma-color-bg, var(--bg));
-}
-.preview-card .pv-badge {
-  font-size: 10px; font-weight: 600;
-  color: var(--accent);
-  text-transform: uppercase; letter-spacing: .5px;
 }
 .preview-card .pv-headline {
   font-size: 13px; font-weight: 600;
@@ -304,6 +303,77 @@ textarea {
   font-size: 11px; padding: 4px 10px;
 }
 
+/* ── 3. Index screens ─────────────────────── */
+#screen-index-start,
+#screen-index-results {
+  height: 100%;
+}
+
+.index-body {
+  padding: 20px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+  flex: 1; min-height: 0;
+}
+.index-body h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.index-body p {
+  margin: 0; font-size: 12px; line-height: 1.5;
+  color: var(--figma-color-text-secondary, var(--muted));
+}
+.index-count {
+  font-weight: 500;
+  color: var(--figma-color-text, var(--text));
+}
+.index-list {
+  flex: 1; min-height: 0; max-height: 200px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.index-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  background: var(--figma-color-bg-secondary, var(--panel));
+  border-radius: 6px; font-size: 12px;
+}
+.index-item .checkmark {
+  color: var(--accent); font-size: 14px; flex-shrink: 0;
+}
+.index-actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  margin-top: 12px;
+}
+
+/* ── 4. Drift modal ───────────────────────── */
+#screen-drift {
+  padding: 16px;
+  gap: 12px;
+}
+#screen-drift .drift-card {
+  border: none;
+}
+#screen-drift .pv-ctas {
+  margin-top: 16px;
+}
+#screen-drift .pv-ctas button:empty {
+  display: none;
+}
+.preview-card .pv-ctas button:empty {
+  display: none;
+}
+
+/* ── Resize handle ────────────────────────────── */
+.resize-handle {
+  position: fixed; bottom: 0; right: 0;
+  width: 16px; height: 16px;
+  cursor: nwse-resize;
+  display: none;          /* shown only on resizable screens */
+  z-index: 200;
+  opacity: 0.4;
+  transition: opacity .15s;
+}
+.resize-handle:hover { opacity: 0.8; }
+.resize-handle svg { display: block; width: 100%; height: 100%; }
+body.resizable .resize-handle { display: block; }
+
 /* ── Toast ─────────────────────────────────── */
 .toast {
   position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
@@ -317,52 +387,29 @@ textarea {
 </head>
 <body>
 
-<!-- ════════ SCREEN: User type selection ════════ -->
-<div id="screen-user-type" class="screen active">
-  <p class="subtitle">Choose your mode</p>
-  <div class="cards">
-    <div class="type-card" id="card-user">
-      <span class="card-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></span>
-      <span class="card-headline">User</span>
-      <span class="card-helper">See guidance when drift happens.</span>
-    </div>
-    <div class="type-card" id="card-admin">
-      <span class="card-icon">⚙</span>
-      <span class="card-headline">Admin</span>
-      <span class="card-helper">Edit the guidance shown to your team.</span>
-    </div>
-  </div>
-</div>
-
 <!-- ════════ SCREEN: Chip ════════ -->
-<div id="screen-chip" class="screen">
+<div id="screen-chip" class="screen active">
   <div class="label">Detach <span id="detach-count">0</span></div>
-  <div class="gear" id="btn-gear" title="Admin access">⚙</div>
+  <div class="gear" id="btn-gear" title="Setup">⚙</div>
 </div>
 
-<!-- ════════ SCREEN: Admin Allowlist ════════ -->
-<div id="screen-admin-list" class="screen">
-  <div class="header">
-    <h2>Admin allow list</h2>
-    <button class="close-btn" id="btn-al-close">✕</button>
-  </div>
-  <div class="add-row">
-    <button id="btn-al-add">+ Add me</button>
-  </div>
-  <div class="email-list" id="al-list"></div>
-  <div class="actions">
-    <button class="primary" id="btn-al-continue">Continue</button>
+<!-- ════════ SCREEN: Drift modal ════════ -->
+<div id="screen-drift" class="screen">
+  <div class="preview-card drift-card">
+    <div class="pv-headline" id="drift-headline"></div>
+    <div class="pv-body" id="drift-body"></div>
+    <div class="pv-ctas">
+      <button class="primary" id="drift-cta1"></button>
+      <button id="drift-cta2"></button>
+    </div>
   </div>
 </div>
 
 <!-- ════════ SCREEN: Authoring ════════ -->
 <div id="screen-authoring" class="screen">
-  <div class="authoring-header">
-    <h2>Coach</h2>
-    <div class="header-right">
-      <button class="avatar-btn" id="btn-admin-list" title="Admin list">👤</button>
-      <button class="close-btn" data-goto="chip">✕</button>
-    </div>
+  <div class="top-nav">
+    <button class="top-tab active" data-section="guidance">Guidance</button>
+    <button class="top-tab" data-section="index">Index</button>
   </div>
   <div class="tabs" id="tab-bar">
     <button class="tab active" data-cat="component">Component<span class="dirty-dot"></span></button>
@@ -378,7 +425,21 @@ textarea {
       </div>
       <div class="field">
         <label>Description</label>
-        <textarea id="ed-description" placeholder="Explain what happened and what to do instead…"></textarea>
+        <div class="rt-wrap">
+          <div class="rt-toolbar">
+            <button type="button" class="rt-btn" data-cmd="bold" title="Bold"><b>B</b></button>
+            <button type="button" class="rt-btn" data-cmd="italic" title="Italic"><i>I</i></button>
+            <span class="rt-sep"></span>
+            <button type="button" class="rt-btn" data-cmd="link" title="Insert link">🔗</button>
+          </div>
+          <div class="rt-editor" id="ed-description" contenteditable="true"
+               data-placeholder="Explain what happened and what to do instead…"></div>
+          <div class="rt-link-bar" id="rt-link-bar">
+            <input type="text" id="rt-link-url" placeholder="https://…" />
+            <button class="primary" id="rt-link-apply">Apply</button>
+            <button id="rt-link-cancel">Cancel</button>
+          </div>
+        </div>
       </div>
       <div class="cta-row">
         <div class="field">
@@ -392,13 +453,13 @@ textarea {
       </div>
       <div class="save-row">
         <button class="primary" id="btn-save">Save</button>
+        <button id="btn-close-editor">Close</button>
         <span class="saved-msg" id="saved-msg">Saved ✓</span>
       </div>
     </div>
     <div class="preview-pane">
       <div class="preview-label">Preview</div>
       <div class="preview-card">
-        <div class="pv-badge" id="pv-badge">Component</div>
         <div class="pv-headline" id="pv-headline"></div>
         <div class="pv-body" id="pv-body"></div>
         <div class="pv-ctas">
@@ -408,6 +469,46 @@ textarea {
       </div>
     </div>
   </div>
+</div>
+
+<!-- ════════ SCREEN: Index Start ════════ -->
+<div id="screen-index-start" class="screen">
+  <div class="top-nav">
+    <button class="top-tab" data-section="guidance">Guidance</button>
+    <button class="top-tab active" data-section="index">Index</button>
+  </div>
+  <div class="index-body">
+    <h3>Index this file's components</h3>
+    <p>Coach will scan local components and component sets so it can recognize detaches more reliably.</p>
+    <div class="index-actions">
+      <button id="btn-index-cancel">Cancel</button>
+      <button class="primary" id="btn-index-run">Index components</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ SCREEN: Index Results ════════ -->
+<div id="screen-index-results" class="screen">
+  <div class="top-nav">
+    <button class="top-tab" data-section="guidance">Guidance</button>
+    <button class="top-tab active" data-section="index">Index</button>
+  </div>
+  <div class="index-body">
+    <p class="index-count"><span id="indexed-count">0</span> components found</p>
+    <div class="index-list" id="index-list"></div>
+    <div class="index-actions">
+      <button class="primary" id="btn-index-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resize handle (bottom-right corner) -->
+<div class="resize-handle" id="resize-handle">
+  <svg viewBox="0 0 16 16" fill="none">
+    <path d="M5 15L15 5"  stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M9 15L15 9"  stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M13 15L15 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+  </svg>
 </div>
 
 <!-- Toast -->
@@ -420,36 +521,63 @@ textarea {
 
 /* ── View states ─────────────────────────────── */
 const VIEW = {
-  USER_TYPE_MODAL:  'user-type',
   TINY_CHIP:        'chip',
-  ADMIN_ALLOWLIST:  'admin-list',
-  ADMIN_AUTHORING:  'authoring',
+  DRIFT_MODAL:      'drift',
+  AUTHORING:        'authoring',
+  INDEX_START:      'index-start',
+  INDEX_RESULTS:    'index-results',
 };
 
 /* ── Sizes ───────────────────────────────────── */
 const CHIP_W = 170, CHIP_H = 32;
-const TYPE_MODAL_W = 300, TYPE_MODAL_H = 148;
-const AUTH_MIN_W = 460, AUTH_MIN_H = 420;
-const LIST_W = 320, LIST_MIN_H = 200, LIST_MAX_H = 420;
+const AUTH_MIN_W = 700, AUTH_MIN_H = 420;
+const INDEX_W = 460, INDEX_H = 320;
+
+const DRIFT_W = 480, DRIFT_MAX_H = 400, DRIFT_PAD = 12;
+const DEFAULT_CONTENT = {
+  component: {
+    headline: 'Component detached',
+    description: 'Try the component properties\u2014there\u2019s likely a variant for this. Detached components won\u2019t receive updates and can drift from approved patterns. If this detach was accidental, undo it and pick the right variant instead.',
+    cta1: 'Got it',
+    cta2: ''
+  },
+  text: {
+    headline: 'Text style removed',
+    description: 'Try the text styles panel\u2014there\u2019s probably an approved style that matches what you\u2019re after. Unstyled text can drift from the system and won\u2019t benefit from future updates. If this was accidental, undo and re-apply the right text style.',
+    cta1: 'Got it',
+    cta2: ''
+  },
+  color: {
+    headline: 'Color token unbound',
+    description: 'Try the color styles/variables\u2014there\u2019s likely an approved token for this. Raw colors won\u2019t receive updates and can drift from the system. If this was accidental, undo and re-apply the correct token.',
+    cta1: 'Got it',
+    cta2: ''
+  },
+  typography: {
+    headline: 'Typography token unbound',
+    description: 'Try the type styles/variables\u2014there\u2019s likely an approved token that fits. Manual typography won\u2019t receive updates and can drift from approved patterns. If this was accidental, undo and re-apply the correct token.',
+    cta1: 'Got it',
+    cta2: ''
+  }
+};
 
 const CATEGORIES = ['component', 'text', 'color', 'typography'];
 const CAT_LABELS = { component: 'Component', text: 'Text', color: 'Color', typography: 'Typography' };
 
 /* ── State ───────────────────────────────────── */
-let currentView = VIEW.USER_TYPE_MODAL;
-let allowlist = [];
+let currentView = VIEW.TINY_CHIP;
 let content = null;
 let currentCat = 'component';
 let savedSnapshot = null;
-let adminName = '';       // name that passed the gate (from Figma currentUser)
 let userName = '';        // current Figma user's display name, sent by code.js
 let userId = '';          // current Figma user's ID, sent by code.js
-let allowlistReturnTo = VIEW.TINY_CHIP; // where to go back from allowlist screen
+let indexedComponents = [];             // last indexed component list
 
 function defaultContent() {
   const out = {};
   CATEGORIES.forEach(c => {
-    out[c] = { headline: '', description: '', cta1: '', cta2: '' };
+    var d = DEFAULT_CONTENT[c] || {};
+    out[c] = { headline: d.headline || '', description: d.description || '', cta1: d.cta1 || '', cta2: d.cta2 || '' };
   });
   return out;
 }
@@ -487,144 +615,140 @@ function resize(w, h) {
   post({ type: 'resize', width: w, height: h });
 }
 
+/* ── HTML sanitizer (rich text output) ──────── */
+function sanitizeHTML(html) {
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  var allowed = ['B','I','EM','STRONG','A','BR','P','UL','OL','LI'];
+  function walk(parent) {
+    Array.from(parent.childNodes).forEach(function(node) {
+      if (node.nodeType === 3) return;
+      if (node.nodeType === 1) {
+        if (allowed.indexOf(node.tagName) < 0) {
+          parent.replaceChild(document.createTextNode(node.textContent), node);
+        } else {
+          Array.from(node.attributes).forEach(function(attr) {
+            if (!(node.tagName === 'A' && attr.name === 'href')) {
+              node.removeAttribute(attr.name);
+            }
+          });
+          if (node.tagName === 'A') {
+            var href = (node.getAttribute('href') || '').trim().toLowerCase();
+            if (href && !href.startsWith('http://') && !href.startsWith('https://')) {
+              // Strip unsafe protocols (javascript:, data:, etc.)
+              node.removeAttribute('href');
+            }
+            node.setAttribute('target', '_blank');
+            node.setAttribute('rel', 'noopener');
+          }
+          walk(node);
+        }
+      }
+    });
+  }
+  walk(tmp);
+  return tmp.innerHTML;
+}
+
+/* ── Height measurement for drift modal ──────── */
+function measureDriftHeight() {
+  // Create an off-screen container at DRIFT_W so the card lays out
+  // at the correct width regardless of the iframe's current size.
+  var probe = document.createElement('div');
+  probe.style.cssText =
+    'position:absolute;left:-9999px;top:0;' +
+    'width:' + DRIFT_W + 'px;padding:16px;' +
+    'display:flex;flex-direction:column;gap:12px;';
+  var card = document.querySelector('#screen-drift .drift-card');
+  var clone = card.cloneNode(true);
+  probe.appendChild(clone);
+  document.body.appendChild(probe);
+  var h = probe.offsetHeight;
+  document.body.removeChild(probe);
+  return h;
+}
+
 /* ── Screen navigation (state machine) ───────── */
 function showScreen(id) {
+  const previousView = currentView;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const screen = document.getElementById('screen-' + id);
   screen.classList.add('active');
   currentView = id;
 
-  switch (id) {
-    case VIEW.USER_TYPE_MODAL:
-      resize(TYPE_MODAL_W, TYPE_MODAL_H);
-      break;
+  // Toggle resize handle: on Authoring & Index screens
+  const resizable = (id === VIEW.AUTHORING || id === VIEW.INDEX_START || id === VIEW.INDEX_RESULTS);
+  document.body.classList.toggle('resizable', resizable);
 
+  switch (id) {
     case VIEW.TINY_CHIP:
       resize(CHIP_W, CHIP_H);
       break;
 
-    case VIEW.ADMIN_ALLOWLIST:
-      renderAllowlist();
-      // Update button label based on context
-      document.getElementById('btn-al-continue').textContent =
-        allowlistReturnTo === VIEW.ADMIN_AUTHORING ? 'Done' : 'Continue';
-      requestAnimationFrame(() => {
-        const h = Math.max(LIST_MIN_H, Math.min(screen.scrollHeight + 2, LIST_MAX_H));
-        resize(LIST_W, h);
-      });
+    case VIEW.DRIFT_MODAL: {
+      // Measure via off-screen clone (independent of iframe size).
+      const h = Math.min(measureDriftHeight() + DRIFT_PAD, DRIFT_MAX_H);
+      // Ask code.js to resize + center on viewport.
+      // Falls back to resize-in-place if reposition fails.
+      post({ type: 'resize-center', width: DRIFT_W, height: h });
       break;
+    }
 
-    case VIEW.ADMIN_AUTHORING:
+    case VIEW.AUTHORING:
+      // Only fetch fresh overrides when entering from outside the editing flow
+      // (chip or drift). When returning from index screens, keep in-memory edits.
+      if (previousView === VIEW.TINY_CHIP || previousView === VIEW.DRIFT_MODAL || !content) {
+        post({ type: 'get-guidance-overrides' });
+      }
       loadTabContent();
       updatePreview();
       updateDirtyDots();
       resize(AUTH_MIN_W, AUTH_MIN_H);
       break;
+
+    case VIEW.INDEX_START:
+      resize(INDEX_W, INDEX_H);
+      break;
+
+    case VIEW.INDEX_RESULTS:
+      renderIndexedComponents();
+      resize(INDEX_W, INDEX_H);
+      break;
   }
 }
-
-/* ═══════════════════════════════════════════════
-   SCREEN 0 : User type selection
-   ═══════════════════════════════════════════════ */
-
-document.getElementById('card-user').onclick = () => {
-  post({ type: 'select-mode', mode: 'user' });
-};
-
-document.getElementById('card-admin').onclick = () => {
-  post({ type: 'select-mode', mode: 'admin' });
-};
 
 /* ═══════════════════════════════════════════════
    SCREEN 1 : Tiny chip
    ═══════════════════════════════════════════════ */
 
 document.getElementById('btn-gear').onclick = () => {
-  // Re-open user type selection
-  showScreen(VIEW.USER_TYPE_MODAL);
+  showScreen(VIEW.AUTHORING);
 };
 
 /* ═══════════════════════════════════════════════
-   SCREEN 2 : Admin allowlist
+   SCREEN 1b : Drift modal
    ═══════════════════════════════════════════════ */
 
-document.getElementById('btn-al-close').onclick = () => {
-  showScreen(allowlistReturnTo);
-};
+document.getElementById('drift-cta1').onclick = () => showScreen(VIEW.TINY_CHIP);
+document.getElementById('drift-cta2').onclick = () => showScreen(VIEW.TINY_CHIP);
 
-document.getElementById('btn-al-continue').onclick = () => {
-  // Must have at least one admin before continuing
-  if (allowlist.length === 0) return;
-  // Set admin name (bootstrap: current user; management: already set)
-  if (!adminName) adminName = userName || (allowlist[0] && allowlist[0].name) || '';
-  showScreen(VIEW.ADMIN_AUTHORING);
-};
+function showDriftModal(category, catContent) {
+  var defaults = DEFAULT_CONTENT[category] || DEFAULT_CONTENT.component;
+  var c = catContent || defaults;
+  document.getElementById('drift-headline').textContent = c.headline || defaults.headline;
+  document.getElementById('drift-body').innerHTML = sanitizeHTML(c.description || defaults.description);
+  document.getElementById('drift-cta1').textContent = c.cta1 || defaults.cta1;
+  document.getElementById('drift-cta2').textContent = c.cta2 || '';
+  showScreen(VIEW.DRIFT_MODAL);
+}
 
-document.getElementById('btn-al-add').onclick = () => {
-  // "Add me" — adds the current Figma user by ID
-  if (!userId) return;
-  // Duplicate check by ID
-  if (!allowlist.some(entry => entry.id === userId)) {
-    allowlist.push({ id: userId, name: userName });
-    post({ type: 'save-allowlist', data: allowlist });
-  }
-  renderAllowlist();
-};
-
-function renderAllowlist() {
-  const list = document.getElementById('al-list');
-  list.innerHTML = '';
-  allowlist.forEach((entry, i) => {
-    const displayName = (typeof entry === 'string') ? entry : (entry.name || entry.id || 'Unknown');
-    const item = document.createElement('div');
-    item.className = 'email-item';
-    const span = document.createElement('span');
-    span.textContent = displayName;
-    item.appendChild(span);
-    const btn = document.createElement('button');
-    btn.className = 'remove-btn';
-    btn.dataset.index = i;
-    btn.title = 'Remove';
-    btn.textContent = 'ⓧ';
-    item.appendChild(btn);
-    list.appendChild(item);
-  });
-  list.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.onclick = () => {
-      const idx = +btn.dataset.index;
-      allowlist.splice(idx, 1);
-      post({ type: 'save-allowlist', data: allowlist });
-      renderAllowlist();
-    };
-  });
-  // re-measure
-  requestAnimationFrame(() => {
-    const screen = document.getElementById('screen-admin-list');
-    if (screen.classList.contains('active')) {
-      const h = Math.max(LIST_MIN_H, Math.min(screen.scrollHeight + 2, LIST_MAX_H));
-      resize(LIST_W, h);
-    }
-  });
+function updateChipCount(n) {
+  document.getElementById('detach-count').textContent = n;
 }
 
 /* ═══════════════════════════════════════════════
-   SCREEN 3 : Admin authoring
+   SCREEN 2 : Authoring (Guidance editor)
    ═══════════════════════════════════════════════ */
-
-// ── 👤 → Admin list (from authoring) ────────
-document.getElementById('btn-admin-list').onclick = () => {
-  readEditorIntoContent();
-  allowlistReturnTo = VIEW.ADMIN_AUTHORING; // back returns to authoring
-  showScreen(VIEW.ADMIN_ALLOWLIST);
-};
-
-// ── ✕ → chip (from authoring) ───────────────
-document.querySelectorAll('[data-goto]').forEach(btn => {
-  btn.onclick = () => {
-    const target = btn.dataset.goto;
-    if (target === 'chip') showScreen(VIEW.TINY_CHIP);
-  };
-});
 
 // ── Tabs ────────────────────────────────────
 document.querySelectorAll('.tab').forEach(tab => {
@@ -642,7 +766,7 @@ function loadTabContent() {
   if (!content) content = defaultContent();
   const cat = content[currentCat] || { headline: '', description: '', cta1: '', cta2: '' };
   document.getElementById('ed-headline').value = cat.headline || '';
-  document.getElementById('ed-description').value = cat.description || '';
+  document.getElementById('ed-description').innerHTML = cat.description || '';
   document.getElementById('ed-cta1').value = cat.cta1 || '';
   document.getElementById('ed-cta2').value = cat.cta2 || '';
 }
@@ -651,7 +775,7 @@ function readEditorIntoContent() {
   if (!content) content = defaultContent();
   content[currentCat] = {
     headline: document.getElementById('ed-headline').value,
-    description: document.getElementById('ed-description').value,
+    description: document.getElementById('ed-description').innerHTML,
     cta1: document.getElementById('ed-cta1').value,
     cta2: document.getElementById('ed-cta2').value,
   };
@@ -661,19 +785,101 @@ function readEditorIntoContent() {
 function updatePreview() {
   if (!content) content = defaultContent();
   const cat = content[currentCat] || {};
-  document.getElementById('pv-badge').textContent = CAT_LABELS[currentCat] + ' drift';
   document.getElementById('pv-headline').textContent = cat.headline || '';
-  document.getElementById('pv-body').textContent = cat.description || '';
-  document.getElementById('pv-cta1').textContent = cat.cta1 || 'CTA 1';
-  document.getElementById('pv-cta2').textContent = cat.cta2 || 'CTA 2';
+  document.getElementById('pv-body').innerHTML = sanitizeHTML(cat.description || '');
+  document.getElementById('pv-cta1').textContent = cat.cta1 || '';
+  document.getElementById('pv-cta2').textContent = cat.cta2 || '';
 }
 
-['ed-headline', 'ed-description', 'ed-cta1', 'ed-cta2'].forEach(id => {
+['ed-headline', 'ed-cta1', 'ed-cta2'].forEach(id => {
   document.getElementById(id).addEventListener('input', () => {
     readEditorIntoContent();
     updatePreview();
     updateDirtyDots();
   });
+});
+
+// contenteditable description fires input events too
+document.getElementById('ed-description').addEventListener('input', () => {
+  readEditorIntoContent();
+  updatePreview();
+  updateDirtyDots();
+});
+
+// ── Rich text toolbar ─────────────────────
+var savedLinkRange = null;  // saved selection range for link insertion
+
+function updateToolbarState() {
+  document.querySelectorAll('.rt-btn').forEach(btn => {
+    const cmd = btn.dataset.cmd;
+    if (cmd === 'bold') {
+      btn.classList.toggle('active', document.queryCommandState('bold'));
+    } else if (cmd === 'italic') {
+      btn.classList.toggle('active', document.queryCommandState('italic'));
+    }
+  });
+}
+
+document.getElementById('ed-description').addEventListener('keyup', updateToolbarState);
+document.getElementById('ed-description').addEventListener('mouseup', updateToolbarState);
+
+document.querySelectorAll('.rt-btn').forEach(btn => {
+  btn.onmousedown = (e) => e.preventDefault(); // keep focus in editor
+  btn.onclick = () => {
+    var cmd = btn.dataset.cmd;
+    if (cmd === 'bold') {
+      document.execCommand('bold', false, null);
+    } else if (cmd === 'italic') {
+      document.execCommand('italic', false, null);
+    } else if (cmd === 'link') {
+      var sel = window.getSelection();
+      if (!sel.rangeCount || sel.isCollapsed) return;
+      // Save range so we can restore it after the URL input
+      savedLinkRange = sel.getRangeAt(0).cloneRange();
+      document.getElementById('rt-link-url').value = '';
+      document.getElementById('rt-link-bar').classList.add('visible');
+      document.getElementById('rt-link-url').focus();
+      return; // don't update content yet
+    }
+    updateToolbarState();
+    readEditorIntoContent();
+    updatePreview();
+    updateDirtyDots();
+  };
+});
+
+// ── Inline link bar ──────────────────────
+document.getElementById('rt-link-apply').onclick = () => {
+  var url = document.getElementById('rt-link-url').value.trim();
+  if (url && savedLinkRange) {
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedLinkRange);
+    document.execCommand('createLink', false, url);
+  }
+  savedLinkRange = null;
+  document.getElementById('rt-link-bar').classList.remove('visible');
+  document.getElementById('ed-description').focus();
+  readEditorIntoContent();
+  updatePreview();
+  updateDirtyDots();
+};
+
+document.getElementById('rt-link-cancel').onclick = () => {
+  savedLinkRange = null;
+  document.getElementById('rt-link-bar').classList.remove('visible');
+  document.getElementById('ed-description').focus();
+};
+
+// Allow Enter key to apply link
+document.getElementById('rt-link-url').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('rt-link-apply').click();
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    document.getElementById('rt-link-cancel').click();
+  }
 });
 
 // ── Dirty dots ──────────────────────────────
@@ -692,13 +898,70 @@ function updateDirtyDots() {
 // ── Save ────────────────────────────────────
 document.getElementById('btn-save').onclick = () => {
   readEditorIntoContent();
-  post({ type: 'save-content', data: content });
+  post({ type: 'save-guidance-overrides', data: content });
+};
+
+document.getElementById('btn-close-editor').onclick = () => {
+  showScreen(VIEW.TINY_CHIP);
 };
 
 function showSavedMsg() {
   const el = document.getElementById('saved-msg');
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── Top-level nav (Guidance / Index) ─────────
+document.querySelectorAll('.top-tab').forEach(tab => {
+  tab.onclick = () => {
+    const section = tab.dataset.section;
+    if (section === 'guidance') {
+      if (currentView !== VIEW.AUTHORING) showScreen(VIEW.AUTHORING);
+    } else if (section === 'index') {
+      // Already on an index screen — nothing to do
+      if (currentView === VIEW.INDEX_START || currentView === VIEW.INDEX_RESULTS) return;
+      // Preserve unsaved edits in memory before leaving authoring
+      if (currentView === VIEW.AUTHORING) readEditorIntoContent();
+      // Ask code.js for previously indexed components, then decide which screen
+      post({ type: 'get-indexed-components' });
+      // Response handled in handleMessage → 'indexed-components'
+    }
+  };
+});
+
+/* ═══════════════════════════════════════════════
+   SCREEN 3 : Index
+   ═══════════════════════════════════════════════ */
+
+document.getElementById('btn-index-cancel').onclick = () => {
+  showScreen(VIEW.AUTHORING);
+};
+
+document.getElementById('btn-index-run').onclick = () => {
+  post({ type: 'run-indexing' });
+};
+
+document.getElementById('btn-index-done').onclick = () => {
+  showScreen(VIEW.TINY_CHIP);
+};
+
+function renderIndexedComponents() {
+  const list = document.getElementById('index-list');
+  const countEl = document.getElementById('indexed-count');
+  list.innerHTML = '';
+  countEl.textContent = indexedComponents.length;
+  indexedComponents.forEach(comp => {
+    const item = document.createElement('div');
+    item.className = 'index-item';
+    const check = document.createElement('span');
+    check.className = 'checkmark';
+    check.textContent = '\u2713';
+    item.appendChild(check);
+    const name = document.createElement('span');
+    name.textContent = comp.name;
+    item.appendChild(name);
+    list.appendChild(item);
+  });
 }
 
 /* ═══════════════════════════════════════════════
@@ -716,46 +979,108 @@ function handleMessage(msg) {
       userId = msg.id || '';
       break;
 
-    case 'route':
-      if (msg.allowlist) allowlist = msg.allowlist;
-      switch (msg.screen) {
-        case 'TINY':
-          showScreen(VIEW.TINY_CHIP);
-          break;
-        case 'ALLOWLIST':
-          if (msg.reason === 'bootstrap') allowlistReturnTo = VIEW.TINY_CHIP;
-          showScreen(VIEW.ADMIN_ALLOWLIST);
-          break;
-        case 'AUTHORING':
-          adminName = userName;
-          showScreen(VIEW.ADMIN_AUTHORING);
-          break;
-      }
-      break;
-
-    case 'allowlist':
-      allowlist = (msg.data || []).map(e => typeof e === 'string' ? { id: null, name: e } : e);
-      // If we're on the allowlist screen, refresh
-      if (currentView === VIEW.ADMIN_ALLOWLIST) renderAllowlist();
-      break;
-
-    case 'content':
-      content = msg.data || defaultContent();
+    case 'guidance-overrides': {
+      // Merge saved data with built-in defaults so empty fields show defaults
+      var defaults = defaultContent();
+      var saved = msg.data || {};
+      content = {};
+      CATEGORIES.forEach(function(cat) {
+        var s = saved[cat] || {};
+        var d = defaults[cat] || {};
+        content[cat] = {
+          headline:    s.headline    || d.headline    || '',
+          description: s.description || d.description || '',
+          cta1:        s.cta1        || d.cta1        || '',
+          cta2:        s.cta2        || d.cta2        || '',
+        };
+      });
       savedSnapshot = JSON.stringify(content);
-      if (currentView === VIEW.ADMIN_AUTHORING) {
+      if (currentView === VIEW.AUTHORING) {
         loadTabContent();
         updatePreview();
         updateDirtyDots();
       }
       break;
+    }
 
     case 'save-ok':
       savedSnapshot = JSON.stringify(content);
       updateDirtyDots();
       showSavedMsg();
       break;
+
+    case 'index-results':
+      indexedComponents = msg.data || [];
+      showScreen(VIEW.INDEX_RESULTS);
+      break;
+
+    case 'indexed-components':
+      indexedComponents = msg.data || [];
+      // Only navigate if the user is still in the editing/index flow
+      // (don't forcefully pull them away from chip or drift)
+      if (currentView === VIEW.AUTHORING || currentView === VIEW.INDEX_START || currentView === VIEW.INDEX_RESULTS) {
+        if (indexedComponents.length > 0) {
+          showScreen(VIEW.INDEX_RESULTS);
+        } else {
+          showScreen(VIEW.INDEX_START);
+        }
+      }
+      break;
+
+    case 'detach-count':
+      updateChipCount(msg.detachCount || 0);
+      break;
+
+    case 'drift':
+      updateChipCount(msg.detachCount || 0);
+      // Guard: only show modal if on chip or drift (don't interrupt editor/index)
+      if (currentView === VIEW.TINY_CHIP || currentView === VIEW.DRIFT_MODAL) {
+        showDriftModal(msg.category, msg.content);
+      }
+      break;
   }
 }
+
+/* ── Drag-to-resize (corner handle) ─────────── */
+/* Minimum sizes per resizable screen */
+const MIN_W_AUTH = 400, MIN_H_AUTH = 300;
+
+(function initResizeHandle() {
+  const handle = document.getElementById('resize-handle');
+  let dragging = false;
+  let startX, startY, startW, startH;
+
+  handle.addEventListener('pointerdown', (e) => {
+    // Only allow on resizable screens
+    if (!document.body.classList.contains('resizable')) return;
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    startW = document.documentElement.clientWidth;
+    startH = document.documentElement.clientHeight;
+    handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  handle.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    e.preventDefault();              // prevent text selection while dragging
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    const newW = Math.max(MIN_W_AUTH, Math.round(startW + dx));
+    const newH = Math.max(MIN_H_AUTH, Math.round(startH + dy));
+    resize(newW, newH);
+  });
+
+  function stopDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    handle.releasePointerCapture(e.pointerId);
+  }
+  handle.addEventListener('pointerup', stopDrag);
+  handle.addEventListener('pointercancel', stopDrag);
+})();
 
 /* ── Toast helper ────────────────────────────── */
 function showToast(msg) {
